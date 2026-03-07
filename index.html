@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>eTRE健体管理系统 v0.5</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23ffffff' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%2334c759'>💪</text></svg>">
+  <style>
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-card: #ffffff;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --accent: #34c759;
+      --accent-dim: #2db84d;
+      --danger: #ff3b30;
+      --warning: #ff9500;
+      --info: #007aff;
+      --border: #e5e5ea;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; }
+    .app-container { height: 100%; display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; position: relative; }
+    .header { padding: 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 18px; font-weight: 600; color: var(--accent); }
+    .header .date { font-size: 12px; color: var(--text-secondary); }
+    .content { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+    .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--bg-secondary); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); z-index: 100; }
+    .nav-item { flex: 1; text-align: center; padding: 8px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: color 0.2s; }
+    .nav-item.active { color: var(--accent); }
+    .nav-item .icon { font-size: 20px; display: block; margin-bottom: 2px; }
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+    .card { background: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--accent); }
+    .time-badge { font-size: 11px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .action-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .action-item:last-child { border-bottom: none; }
+    .action-info { flex: 1; }
+    .action-name { font-size: 14px; font-weight: 500; }
+    .action-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .action-time { font-size: 11px; color: var(--accent); cursor: pointer; padding: 4px 8px; }
+    .action-time:hover { text-decoration: underline; }
+    .check-btn { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+    .check-btn.checked { background: var(--accent); border-color: var(--accent); }
+    .check-btn.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+    .edit-btn { color: var(--text-secondary); cursor: pointer; padding: 4px 8px; font-size: 12px; background: none; border: none; }
+    .delete-btn { color: var(--danger); cursor: pointer; padding: 4px 8px; font-size: 12px; background: none; border: none; }
+    .btn { padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn-small { padding: 6px 12px; font-size: 12px; width: auto; margin-top: 0; }
+    .btn-danger { background: var(--danger); color: white; }
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-card { background: var(--bg-card); border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .streak-card { background: linear-gradient(135deg, var(--accent-dim), var(--accent)); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 16px; }
+    .streak-value { font-size: 48px; font-weight: 800; color: white; }
+    .streak-label { font-size: 14px; color: white; opacity: 0.9; }
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; padding: 12px 0; }
+    .timeline-item::before { content: ''; position: absolute; left: -22px; top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid white; }
+    .timeline-time { font-size: 12px; color: var(--accent); font-weight: 600; }
+    .timeline-title { font-size: 14px; font-weight: 500; margin: 4px 0; }
+    .timeline-desc { font-size: 12px; color: var(--text-secondary); }
+    .training-day { background: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .training-day.today { border-color: var(--accent); }
+    .day-name { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .day-tag { font-size: 10px; padding: 2px 8px; border-radius: 8px; background: var(--accent); color: white; }
+    .exercise-item { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .exercise-item:last-child { border-bottom: none; }
+    .exercise-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .exercise-sets { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .exercise-info { flex: 1; display: flex; align-items: center; gap: 12px; }
+    .tab-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+    .tab-btn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .record-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .record-time { font-size: 11px; color: var(--accent); cursor: pointer; }
+    .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stats-box { background: var(--bg-card); border-radius: 8px; padding: 12px; text-align: center; }
+    .stats-num { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .stats-text { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+    .batch-actions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .batch-btn { padding: 6px 12px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 11px; cursor: pointer; }
+    .batch-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg-secondary); border-radius: 16px; padding: 20px; width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto; }
+    .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; text-align: center; }
+    .modal-field { margin-bottom: 12px; }
+    .modal-field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .modal-field input, .modal-field select, .modal-field textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 14px; }
+    .modal-field textarea { resize: none; height: 80px; }
+    .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-buttons .btn { flex: 1; }
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+    .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+    .category-section { margin-bottom: 20px; }
+    .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .category-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .category-actions { display: flex; gap: 4px; }
+    .phase-card { background: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--accent); }
+    .phase-days { font-size: 12px; color: var(--accent); font-weight: 600; }
+    .phase-title { font-size: 16px; font-weight: 600; margin: 8px 0; }
+    .phase-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .breathing-circle { width: 200px; height: 200px; border-radius: 50%; background: var(--bg-card); border: 3px solid var(--accent); margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--accent); transition: transform 4s ease-in-out; }
+    .breathing-circle.inhale { transform: scale(1.3); }
+    .breathing-circle.hold { transform: scale(1.3); }
+    .breathing-circle.exhale { transform: scale(1); }
+    .breathing-instruction { text-align: center; font-size: 18px; color: var(--accent); margin-bottom: 20px; }
+    .timer-controls { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+    .timer-btn { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent); background: transparent; color: var(--accent); font-size: 18px; cursor: pointer; }
+    .breathing-instruction { text-align: center; font-size: 18px; color: var(--accent); margin-bottom: 20px; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .current-time { animation: pulse 2s infinite; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div>
+        <h1>💪 eTRE健体</h1>
+        <div style="font-size: 10px; color: var(--text-secondary);">eTRE = 增强型时间限制进食 (Enhanced Time-Restricted Eating)</div>
+        <div class="date" id="currentDate"></div>
+      </div>
+      <div class="current-time" id="currentTime" style="font-size: 20px; font-weight: 600; color: var(--accent);"></div>
+    </header>
+    
+    <div class="content">
+      <div class="page active" id="page-home">
+        <div class="streak-card">
+          <div class="streak-value" id="streakCount">0</div>
+          <div class="streak-label">连续打卡天数</div>
+        </div>
+        
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="todayProgress">0%</div>
+            <div class="stat-label">今日完成</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="dayInPhase">1</div>
+            <div class="stat-label">当前阶段第N天</div>
+          </div>
+        </div>
+        
+        <div class="section-title">📅 今日日程 <button class="btn btn-small btn-secondary" onclick="showBatchCheckModal()">批量打卡</button></div>
+        <div class="card">
+          <div class="timeline" id="todaySchedule"></div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="checkIn()">✅ 今日打卡</button>
+        
+        <div class="section-title" style="margin-top: 20px;">📊 统计</div>
+        <div class="card">
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchStats('day')">日</button>
+            <button class="tab-btn" onclick="switchStats('week')">周</button>
+            <button class="tab-btn" onclick="switchStats('month')">月</button>
+          </div>
+          <div class="stats-summary" id="statsSummary"></div>
+        </div>
+      </div>
+      
+      <div class="page" id="page-schedule">
+        <div class="section-title">🍽️ 打卡项目 <button class="btn btn-small btn-secondary" onclick="showAddActionModal('meal')">+ 添加</button></div>
+        <div id="mealActions"></div>
+      </div>
+      
+      <div class="page" id="page-training">
+        <div class="section-title">🏋️ 训练计划 <button class="btn btn-small btn-secondary" onclick="showEditTrainingModal()">编辑</button></div>
+        <div id="trainingSchedule"></div>
+      </div>
+      
+      <div class="page" id="page-evening">
+        <div class="section-title">🌙 晚间神经重塑 <button class="btn btn-small btn-secondary" onclick="showAddActionModal('evening')">+ 添加</button></div>
+        <div id="eveningActions"></div>
+        
+        <div class="card" style="border-color: var(--warning);">
+          <div class="card-header">
+            <span class="card-title" style="color: var(--warning);">⚠️ 特种增量模块</span>
+            <button class="btn btn-small btn-secondary" onclick="showAddActionModal('special')" style="padding: 2px 8px;">+ 添加</button>
+          </div>
+          <div id="specialActions"></div>
+        </div>
+      </div>
+      
+      <div class="page" id="page-records">
+        <div class="section-title">📋 打卡记录</div>
+        <div class="card">
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchRecordView('all')">全部</button>
+            <button class="tab-btn" onclick="switchRecordView('meal')">进食</button>
+            <button class="tab-btn" onclick="switchRecordView('training')">训练</button>
+            <button class="tab-btn" onclick="switchRecordView('evening')">晚间</button>
+          </div>
+          <div id="recordList"></div>
+        </div>
+      </div>
+      
+      <div class="page" id="page-progress">
+        <div class="section-title">📈 进阶时间轴 <button class="btn btn-small btn-secondary" onclick="showProgressModal()">设置</button></div>
+        
+        <div id="currentProgressCard"></div>
+        
+        <div class="phase-card">
+          <div class="phase-days">第 1-14 天</div>
+          <div class="phase-title">戒断与重组期</div>
+          <div class="phase-desc">晚上极度饥饿，睡眠波动，性欲平淡期。不要慌，熬过去！</div>
+        </div>
+        
+        <div class="phase-card">
+          <div class="phase-days">第 15-45 天</div>
+          <div class="phase-title">脑雾消散与炎症褪去</div>
+          <div class="phase-desc">eTRE发挥效果，体重暴降8-12斤。白天工作精神如剃刀。大腿后侧出现切割线。</div>
+        </div>
+        
+        <div class="phase-card">
+          <div class="phase-days">第 45-90 天</div>
+          <div class="phase-title">雄风与体能巅峰</div>
+          <div class="phase-desc">晨勃回归，20分钟成为基础标配。体重稳定在155-160斤，腹肌轮廓清晰。</div>
+        </div>
+        
+        <div class="phase-card">
+          <div class="phase-days">年底冲刺</div>
+          <div class="phase-title">CNS强健 & 极限挑战</div>
+          <div class="phase-desc">可进行长距离拉练备战全马。加入双力臂和倒立撑训练。</div>
+        </div>
+        
+        <div class="section-title" style="margin-top: 24px;">📊 记录</div>
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span>体重记录</span>
+            <button class="btn btn-secondary btn-small" onclick="addWeight()">+ 记录</button>
+          </div>
+          <div id="weightRecords"></div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px; border-color: var(--danger);">
+          <div style="text-align: center;">
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清除所有数据</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="nav">
+      <div class="nav-item active" data-page="home"><span class="icon">🏠</span>主页</div>
+      <div class="nav-item" data-page="schedule"><span class="icon">🍽️</span>进食</div>
+      <div class="nav-item" data-page="training"><span class="icon">🏋️</span>训练</div>
+      <div class="nav-item" data-page="evening"><span class="icon">🌙</span>晚间</div>
+      <div class="nav-item" data-page="records"><span class="icon">📋</span>记录</div>
+      <div class="nav-item" data-page="progress"><span class="icon">📈</span>进度</div>
+    </nav>
+  </div>
+
+  <div class="modal-overlay" id="batchCheckModal">
+    <div class="modal">
+      <div class="modal-title">批量打卡</div>
+      <div class="batch-actions" id="batchActionList"></div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('batchCheckModal')">取消</button>
+        <button class="btn btn-primary" onclick="confirmBatchCheck()">确认打卡</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="actionModal">
+    <div class="modal">
+      <div class="modal-title" id="actionModalTitle">添加打卡项</div>
+      <div class="modal-field">
+        <label>名称</label>
+        <input type="text" id="actionName" placeholder="例如：早餐">
+      </div>
+      <div class="modal-field">
+        <label>时间 (HH:MM)</label>
+        <input type="time" id="actionTime" value="08:00">
+      </div>
+      <div class="modal-field">
+        <label>描述/参数</label>
+        <textarea id="actionDesc" placeholder="例如：2个全蛋 + 全麦面包"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>周期</label>
+        <select id="actionPeriod">
+          <option value="daily">每日</option>
+          <option value="weekly">每周</option>
+          <option value="weekly_12">每周1-2次</option>
+        </select>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('actionModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveAction()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editTrainingModal">
+    <div class="modal">
+      <div class="modal-title">编辑训练计划</div>
+      <div class="modal-field">
+        <label>选择星期</label>
+        <select id="editTrainingDay">
+          <option value="monday">周一</option>
+          <option value="tuesday">周二</option>
+          <option value="wednesday">周三</option>
+          <option value="thursday">周四</option>
+          <option value="friday">周五</option>
+          <option value="saturday">周六</option>
+          <option value="sunday">周日</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>训练内容</label>
+        <textarea id="editTrainingContent" placeholder="格式：&#10;动作名称1&#10;组数x次数&#10;&#10;动作名称2&#10;组数x次数"></textarea>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('editTrainingModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveTrainingEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editTimeModal">
+    <div class="modal">
+      <div class="modal-title">修改时间</div>
+      <div class="modal-field">
+        <input type="time" id="editTimeInput">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('editTimeModal')">取消</button>
+        <button class="btn btn-primary" onclick="confirmEditTime()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="logModal">
+    <div class="modal">
+      <div class="modal-title" id="logModalTitle">记录日志</div>
+      <div class="modal-field">
+        <label>详情记录</label>
+        <textarea id="logContent" placeholder="记录今日详情..."></textarea>
+      </div>
+      <div id="logHistory" style="max-height: 150px; overflow-y: auto; margin-top: 12px;"></div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('logModal')">关闭</button>
+        <button class="btn btn-primary" onclick="saveLog()">保存日志</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="exerciseModal">
+    <div class="modal">
+      <div class="modal-title" id="exerciseModalTitle">编辑训练项目</div>
+      <div class="modal-field">
+        <label>项目名称</label>
+        <input type="text" id="exerciseName" placeholder="例如：A1: 标准引体向上">
+      </div>
+      <div class="modal-field">
+        <label>组数/次数</label>
+        <input type="text" id="exerciseSets" placeholder="例如：4组 x 8-10次">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('exerciseModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveExercise()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="progressModal">
+    <div class="modal">
+      <div class="modal-title">设置进度</div>
+      <div class="modal-field">
+        <label>起始日期</label>
+        <input type="date" id="startDateInput">
+      </div>
+      <div class="modal-field">
+        <label>当前阶段</label>
+        <select id="currentPhaseInput">
+          <option value="1">阶段1：戒断与重组期 (1-14天)</option>
+          <option value="2">阶段2：脑雾消散与炎症褪去 (15-45天)</option>
+          <option value="3">阶段3：雄风与体能巅峰 (45-90天)</option>
+          <option value="4">阶段4：年底冲刺 (90天+)</option>
+        </select>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-secondary" onclick="closeModal('progressModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveProgress()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const defaultActions = {
+      meal: [
+        { id: 'meal_1', name: '温水+海盐', time: '06:30', desc: '唤醒肾上腺 - 1杯温水加少许海盐', period: 'daily', order: 1 },
+        { id: 'meal_2', name: '黑咖啡', time: '06:30', desc: '', period: 'daily', order: 2 },
+        { id: 'meal_3', name: '早餐', time: '07:00', desc: '2-3个全蛋 + 全麦面包/燕麦', period: 'daily', order: 3 },
+        { id: 'meal_4', name: '肌肉重塑餐', time: '09:30', desc: '1勺乳清蛋白 + 1根香蕉', period: 'daily', order: 4 },
+        { id: 'meal_5', name: '蛋白质主餐', time: '12:00', desc: '250-300g 牛排/鸡胸/鱼类', period: 'daily', order: 5 },
+        { id: 'meal_6', name: '粗粮', time: '12:00', desc: '拳头大小红薯/糙米', period: 'daily', order: 6 },
+        { id: 'meal_7', name: '蔬菜', time: '12:00', desc: '西兰花/菠菜 - 抗炎主力', period: 'daily', order: 7 },
+        { id: 'meal_8', name: '缓释抗饿餐', time: '14:00', desc: '坚果/牛油果 + 希腊酸奶', period: 'daily', order: 8 },
+        { id: 'meal_9', name: '绝对禁食', time: '14:30', desc: '只允许水/黑咖啡/原叶茶', period: 'daily', order: 9 }
+      ],
+      evening: [
+        { id: 'eve_1', name: '亚洲蹲', time: '21:00', desc: '3分钟 - 蹲到底，骨盆打开，深呼吸', period: 'daily', order: 1 },
+        { id: 'eve_2', name: '反向凯格尔', time: '21:10', desc: '5分钟 - 解除PC肌痉挛，向下向外轻推', period: 'daily', order: 2 },
+        { id: 'eve_3', name: '盒式呼吸', time: '21:20', desc: '10分钟 - 吸气4秒-憋气4秒-呼气4秒-憋气4秒', period: 'daily', order: 3 }
+      ],
+      special: [
+        { id: 'spec_1', name: '脱敏训练', time: '21:30', desc: '每周1-2次：润滑启动→攀升觉察→悬崖勒马→副交感神经介入→循环3-4次', period: 'weekly_12', weekDays: [3, 6, 0], order: 1 }
+      ],
+      training: [
+        { id: 'train_mon', name: '周一：拉力与促睾', period: 'weekly', weekDay: 1 },
+        { id: 'train_tue', name: '周二：下肢训练', period: 'weekly', weekDay: 2 },
+        { id: 'train_wed', name: '周三：有氧训练', period: 'weekly', weekDay: 3 },
+        { id: 'train_thu', name: '周四：推力与肩宽', period: 'weekly', weekDay: 4 },
+        { id: 'train_fri', name: '周五：代谢轰炸', period: 'weekly', weekDay: 5 },
+        { id: 'train_sat', name: '周六：恢复', period: 'weekly', weekDay: 6 },
+        { id: 'train_sun', name: '周日：恢复', period: 'weekly', weekDay: 0 }
+      ]
+    };
+
+    let trainingData = {
+      monday: { name: '周一：拉力与促睾系统', exercises: [
+        { name: 'A1: 标准引体向上', sets: '4组 x 力竭前停止(RIR=1)' },
+        { name: 'A2: 哑铃农夫行走', sets: '4趟 x 45-60秒/趟' },
+        { name: 'B1: 龙门架坐姿划船/高位下拉', sets: '4组 x 10-12次' },
+        { name: 'B2: 哑铃二头交替弯举', sets: '3组 x 每侧10次' }
+      ]},
+      tuesday: { name: '周二：下肢铠甲与单腿爆发', exercises: [
+        { name: 'A1: 保加利亚分腿蹲', sets: '4组 x 每腿8-10次' },
+        { name: 'A2: 哑铃罗马尼亚硬拉', sets: '4组 x 12次' },
+        { name: 'B1: 哑铃高脚杯深蹲', sets: '3组 x 15次' },
+        { name: 'B2: 单腿站姿提踵', sets: '3组 x 每腿15-20次' }
+      ]},
+      wednesday: { name: '周三：内皮细胞修复', exercises: [
+        { name: '有氧训练', sets: '40分钟椭圆机或慢跑，心率120-135' }
+      ]},
+      thursday: { name: '周四：推力与肩宽', exercises: [
+        { name: 'A1: 哑铃地板推举/上斜俯卧撑', sets: '4组 x 10-12次' },
+        { name: 'A2: 龙门架面拉', sets: '4组 x 15次' },
+        { name: 'B1: 站姿哑铃肩推', sets: '4组 x 8-10次' },
+        { name: 'B2: 龙门架三头下压', sets: '3组 x 12次' }
+      ]},
+      friday: { name: '周五：全身代谢轰炸', exercises: [
+        { name: 'A1: Thrusters', sets: '10次' },
+        { name: 'A2: 俯卧撑', sets: '15次' },
+        { name: 'A3: 划船', sets: '10次' },
+        { name: 'A4: 悬垂举腿', sets: '10次' }
+      ]},
+      saturday: { name: '周六：自然恢复', exercises: [
+        { name: '户外快走/徒步', sets: '1小时以上' },
+        { name: '晒太阳', sets: '多晒太阳' }
+      ]},
+      sunday: { name: '周日：自然恢复', exercises: [
+        { name: '户外快走/徒步', sets: '1小时以上' },
+        { name: '晒太阳', sets: '多晒太阳' }
+      ]}
+    };
+
+    let state = {
+      streak: 0,
+      startDate: null,
+      checks: {},
+      records: [],
+      weights: [],
+      customActions: {},
+      customTraining: {},
+      currentPhase: 1,
+      logs: {},
+      exerciseLogs: {}
+    };
+    
+    let currentStatsPeriod = 'day';
+    let currentRecordFilter = 'all';
+    let selectedBatchActions = new Set();
+    let editingActionId = null;
+    let editingActionCategory = null;
+    let editingActionElement = null;
+
+    function loadState() {
+      const saved = localStorage.getItem('etreState');
+      if (saved) {
+        try {
+          state = JSON.parse(saved);
+        } catch (e) {
+          console.error('数据解析失败，使用默认数据:', e);
+          state = { streak: 0, startDate: null, checks: {}, records: [], weights: [], customActions: {}, customTraining: {} };
+        }
+      }
+      
+      if (!state) {
+        state = { streak: 0, startDate: null, checks: {}, records: [], weights: [], customActions: {}, customTraining: {} };
+      }
+      
+      if (!state.customActions) {
+        state.customActions = {};
+      }
+      
+      const categories = ['meal', 'evening', 'special', 'training'];
+      let hasAnyActions = false;
+      categories.forEach(cat => {
+        if (state.customActions[cat] && Array.isArray(state.customActions[cat]) && state.customActions[cat].length > 0) {
+          hasAnyActions = true;
+        }
+      });
+      
+      if (!hasAnyActions) {
+        state.customActions = JSON.parse(JSON.stringify(defaultActions));
+      } else {
+        categories.forEach(cat => {
+          if (!state.customActions[cat] || !Array.isArray(state.customActions[cat])) {
+            state.customActions[cat] = defaultActions[cat] ? JSON.parse(JSON.stringify(defaultActions[cat])) : [];
+          }
+        });
+      }
+      
+      if (!state.startDate) {
+        state.startDate = new Date().toISOString().split('T')[0];
+      }
+      
+      if (state.customTraining) trainingData = { ...trainingData, ...state.customTraining };
+      
+      saveState();
+      updateUI();
+    }
+
+    function saveState() {
+      const categories = ['meal', 'evening', 'special', 'training'];
+      let hasAnyActions = false;
+      categories.forEach(cat => {
+        if (state.customActions && state.customActions[cat] && Array.isArray(state.customActions[cat]) && state.customActions[cat].length > 0) {
+          hasAnyActions = true;
+        }
+      });
+      
+      if (!hasAnyActions) {
+        state.customActions = JSON.parse(JSON.stringify(defaultActions));
+      } else {
+        categories.forEach(cat => {
+          if (!state.customActions[cat] || !Array.isArray(state.customActions[cat])) {
+            state.customActions[cat] = defaultActions[cat] ? JSON.parse(JSON.stringify(defaultActions[cat])) : [];
+          }
+        });
+      }
+      localStorage.setItem('etreState', JSON.stringify(state));
+    }
+
+    function updateUI() {
+      const now = new Date();
+      const options = { month: 'short', day: 'numeric', weekday: 'short' };
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+      document.getElementById('currentTime').textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      
+      document.getElementById('streakCount').textContent = state.streak;
+      
+      if (state.startDate) {
+        const start = new Date(state.startDate);
+        const days = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+        document.getElementById('dayInPhase').textContent = days;
+      }
+      
+      renderTodaySchedule();
+      renderMealActions();
+      renderEveningActions();
+      renderTrainingSchedule();
+      renderWeightRecords();
+      renderStats();
+      renderRecords();
+      renderCurrentProgress();
+      restoreCheckStates();
+      
+      setInterval(() => {
+        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      }, 1000);
+    }
+
+    function getTodayActions() {
+      const today = new Date().getDay();
+      const actions = [];
+      
+      const categories = ['meal', 'evening', 'special', 'training'];
+      categories.forEach(category => {
+        let categoryActions = (state.customActions && state.customActions[category]) ? state.customActions[category] : [];
+        if (!Array.isArray(categoryActions) || categoryActions.length === 0) {
+          categoryActions = defaultActions[category] ? JSON.parse(JSON.stringify(defaultActions[category])) : [];
+        }
+        
+        categoryActions.forEach(action => {
+          if (!action || !action.name) return;
+          
+          if (action.period === 'daily') {
+            actions.push({ ...action, category });
+          } else if (action.period === 'weekly' && action.weekDay === today) {
+            actions.push({ ...action, category });
+          } else if (action.period === 'weekly_12' && action.weekDays && action.weekDays.includes(today)) {
+            actions.push({ ...action, category });
+          } else if (!action.period && category === 'training') {
+            actions.push({ ...action, category });
+          }
+        });
+      });
+      
+      return actions.sort((a, b) => {
+        const timeA = a.time || '00:00';
+        const timeB = b.time || '00:00';
+        return timeA.localeCompare(timeB);
+      });
+    }
+
+    function restoreCheckStates() {
+      const today = new Date().toISOString().split('T')[0];
+      const todayChecks = state.checks[today] || {};
+      
+      document.querySelectorAll('.check-btn').forEach(btn => {
+        const actionId = btn.dataset.actionId;
+        const category = btn.dataset.category;
+        if (actionId && category && todayChecks[category] && todayChecks[category][actionId]) {
+          btn.classList.add('checked');
+        } else {
+          btn.classList.remove('checked');
+        }
+      });
+    }
+
+    function toggleActionCheck(btn) {
+      const actionId = btn.dataset.actionId;
+      const category = btn.dataset.category;
+      if (!actionId || !category) return;
+      
+      btn.classList.toggle('checked');
+      
+      const today = new Date().toISOString().split('T')[0];
+      if (!state.checks[today]) state.checks[today] = {};
+      if (!state.checks[today][category]) state.checks[today][category] = {};
+      
+      if (btn.classList.contains('checked')) {
+        const action = (state.customActions[category] || []).find(a => a.id === actionId);
+        const actionName = action ? action.name : '未知';
+        state.checks[today][category][actionId] = { time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) };
+        
+        state.records.unshift({
+          id: Date.now(),
+          actionId,
+          actionName,
+          category,
+          time: new Date().toISOString()
+        });
+        if (state.records.length > 100) state.records = state.records.slice(0, 100);
+      } else {
+        delete state.checks[today][category][actionId];
+        const action = (state.customActions[category] || []).find(a => a.id === actionId);
+        const actionName = action ? action.name : '';
+        state.records = state.records.filter(r => !(r.actionId === actionId && r.time.startsWith(today)));
+      }
+      
+      saveState();
+      updateUI();
+    }
+
+    function renderMealActions() {
+      const container = document.getElementById('mealActions');
+      const actions = (state.customActions.meal || []).sort((a, b) => a.order - b.order);
+      
+      if (actions.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🍽️</div><div>暂无打卡项</div></div>';
+        return;
+      }
+      
+      container.innerHTML = `
+        <div class="card">
+          <div class="category-header">
+            <span class="category-name">🍽️ 进食</span>
+            <div class="category-actions">
+              <button class="btn btn-small btn-secondary" onclick="batchCheckCategory('meal')">批量打卡</button>
+              <button class="btn btn-small btn-secondary" onclick="showAddActionModal('meal')">+</button>
+            </div>
+          </div>
+          ${actions.map(action => `
+            <div class="action-item">
+              <button class="check-btn" data-action-id="${action.id}" data-category="meal" onclick="toggleActionCheck(this)"></button>
+              <div class="action-info">
+                <div class="action-name">${action.name}</div>
+                <div class="action-meta">${action.desc || ''}</div>
+              </div>
+              <span class="action-time" onclick="editActionTime(this, '${action.id}', 'meal')">${action.time}</span>
+              <button class="edit-btn" onclick="editAction('${action.id}', 'meal')">✏️</button>
+              <button class="delete-btn" onclick="deleteAction('${action.id}', 'meal')">🗑️</button>
+              <button class="edit-btn" onclick="showLogModal('${action.id}', 'meal')">📝</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderEveningActions() {
+      const eveningContainer = document.getElementById('eveningActions');
+      const specialContainer = document.getElementById('specialActions');
+      
+      const eveningActions = (state.customActions.evening || []).sort((a, b) => a.order - b.order);
+      const specialActions = (state.customActions.special || []).sort((a, b) => a.order - b.order);
+      
+      if (eveningActions.length === 0) {
+        eveningContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🌙</div><div>暂无打卡项</div></div>';
+      } else {
+        eveningContainer.innerHTML = `
+          <div class="card">
+            <div class="category-header">
+              <span class="category-name">🌙 晚间</span>
+              <div class="category-actions">
+                <button class="btn btn-small btn-secondary" onclick="batchCheckCategory('evening')">批量打卡</button>
+              </div>
+            </div>
+            ${eveningActions.map(action => `
+              <div class="action-item">
+                <button class="check-btn" data-action-id="${action.id}" data-category="evening" onclick="toggleActionCheck(this)"></button>
+                <div class="action-info">
+                  <div class="action-name">${action.name}</div>
+                  <div class="action-meta">${action.desc || ''}</div>
+                </div>
+                <span class="action-time" onclick="editActionTime(this, '${action.id}', 'evening')">${action.time}</span>
+                <button class="edit-btn" onclick="editAction('${action.id}', 'evening')">✏️</button>
+                <button class="delete-btn" onclick="deleteAction('${action.id}', 'evening')">🗑️</button>
+                <button class="edit-btn" onclick="showLogModal('${action.id}', 'evening')">📝</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      
+      if (specialActions.length === 0) {
+        specialContainer.innerHTML = `
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">暂无特种训练</p>
+          <button class="btn btn-small btn-secondary" onclick="showAddActionModal('special')">+ 添加特种项目</button>
+        `;
+      } else {
+        specialContainer.innerHTML = `
+          <div style="margin-bottom: 8px;">
+            <button class="btn btn-small btn-secondary" onclick="showAddActionModal('special')">+ 添加特种项目</button>
+          </div>
+          ${specialActions.map(action => `
+            <div class="action-item">
+              <button class="check-btn" data-action-id="${action.id}" data-category="special" onclick="toggleActionCheck(this)"></button>
+              <div class="action-info">
+                <div class="action-name">${action.name}</div>
+                <div class="action-meta">${action.desc || ''}</div>
+              </div>
+              <span class="action-time" onclick="editActionTime(this, '${action.id}', 'special')">${action.time}</span>
+              <button class="edit-btn" onclick="editAction('${action.id}', 'special')">✏️</button>
+              <button class="delete-btn" onclick="deleteAction('${action.id}', 'special')">🗑️</button>
+              <button class="edit-btn" onclick="showLogModal('${action.id}', 'special')">📝</button>
+            </div>
+          `).join('')}
+        `;
+      }
+    }
+
+    function renderTodaySchedule() {
+      const container = document.getElementById('todaySchedule');
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      const today = new Date().toISOString().split('T')[0];
+      const todayChecks = state.checks[today] || {};
+      
+      const todayActions = getTodayActions();
+      
+      if (todayActions.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>暂无打卡项目</div></div>';
+        return;
+      }
+      
+      container.innerHTML = todayActions.map(item => {
+        const timeStr = item.time || '00:00';
+        const [h, m] = timeStr.split(':').map(Number);
+        const itemTime = h * 60 + m;
+        const isPast = currentTime > itemTime;
+        const isCurrent = currentTime >= itemTime && currentTime < itemTime + 30;
+        const isChecked = todayChecks[item.category] && todayChecks[item.category][item.id];
+        
+        return `
+          <div class="timeline-item" style="${isCurrent ? 'background: var(--bg-card); margin: 0 -16px; padding: 12px 16px; border-left: 3px solid var(--accent);' : ''}">
+            <button class="check-btn ${isChecked ? 'checked' : ''}" data-action-id="${item.id}" data-category="${item.category}" onclick="toggleActionCheck(this)" style="position: absolute; left: -30px; top: 12px;"></button>
+            <div class="timeline-time">${timeStr}</div>
+            <div class="timeline-title" style="${isPast ? 'color: var(--text-secondary);' : ''}">${item.name}</div>
+            <div class="timeline-desc">${item.desc || ''}</div>
+          </div>
+        `;
+      }).join('');
+      
+      let completedCount = 0;
+      Object.values(todayChecks).forEach(dayChecks => {
+        completedCount += Object.keys(dayChecks).length;
+      });
+      
+      const totalCount = todayActions.length;
+      const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      document.getElementById('todayProgress').textContent = progress + '%';
+    }
+
+    function renderTrainingSchedule() {
+      const container = document.getElementById('trainingSchedule');
+      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const dayOfWeek = new Date().getDay();
+      const todayKey = days[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
+      const today = new Date().toISOString().split('T')[0];
+      const todayChecks = state.checks[today] || {};
+      
+      container.innerHTML = days.map((day) => {
+        const data = trainingData[day];
+        const isToday = day === todayKey;
+        
+        const exerciseId = 'train_' + day;
+        const isDayChecked = todayChecks['training'] && todayChecks['training'][exerciseId];
+        
+        const isRestDay = data.type === 'cardio' || data.type === 'rest';
+        const hasExercises = data.exercises && data.exercises.length > 0;
+        
+        return `
+          <div class="training-day ${isToday ? 'today' : ''}">
+            <div class="day-name">
+              <span onclick="editTrainingTitle('${day}')" style="cursor:pointer;">${data.name}</span>
+              ${isToday ? '<span class="day-tag">今天</span>' : ''}
+              <button class="btn btn-small btn-secondary" onclick="showExerciseModal('${day}')" style="margin-left: auto; padding: 2px 8px;">+</button>
+            </div>
+            ${(data.exercises || []).map((ex, idx) => {
+              const exId = 'train_' + day + '_' + idx;
+              const isChecked = todayChecks['training'] && todayChecks['training'][exId];
+              return `
+                <div class="exercise-item">
+                  <button class="check-btn ${isChecked ? 'checked' : ''}" data-action-id="${exId}" data-category="training" onclick="toggleActionCheck(this)"></button>
+                  <div class="exercise-info" style="flex: 1;">
+                    <div class="exercise-name">${ex.name}</div>
+                    <div class="exercise-sets">${ex.sets || ''}</div>
+                  </div>
+                  <button class="edit-btn" onclick="showExerciseModal('${day}', ${idx})">✏️</button>
+                  <button class="delete-btn" onclick="deleteExercise('${day}', ${idx})">🗑️</button>
+                  <button class="edit-btn" onclick="showLogModal('${exId}', 'training')">📝</button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStats() {
+      const container = document.getElementById('statsSummary');
+      const now = new Date();
+      let total = 0, completed = 0;
+      
+      if (currentStatsPeriod === 'day') {
+        const today = new Date().toISOString().split('T')[0];
+        total = getTodayActions().length;
+        const todayChecks = state.checks[today] || {};
+        Object.values(todayChecks).forEach(dayChecks => {
+          completed += Object.keys(dayChecks).length;
+        });
+      } else if (currentStatsPeriod === 'week') {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          if (state.checks[dateStr]) {
+            Object.values(state.checks[dateStr]).forEach(dayChecks => {
+              completed += Object.keys(dayChecks).length;
+            });
+          }
+        }
+        total = getTodayActions().length * 7;
+      } else {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        for (let d = new Date(monthStart); d <= now; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
+          if (state.checks[dateStr]) {
+            Object.values(state.checks[dateStr]).forEach(dayChecks => {
+              completed += Object.keys(dayChecks).length;
+            });
+          }
+        }
+        total = getTodayActions().length * now.getDate();
+      }
+      
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      
+      container.innerHTML = `
+        <div class="stats-box"><div class="stats-num">${completed}</div><div class="stats-text">完成次数</div></div>
+        <div class="stats-box"><div class="stats-num">${total}</div><div class="stats-text">应完成</div></div>
+        <div class="stats-box"><div class="stats-num">${rate}%</div><div class="stats-text">完成率</div></div>
+      `;
+    }
+
+    function switchStats(period) {
+      currentStatsPeriod = period;
+      document.querySelectorAll('#page-home .tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderStats();
+    }
+
+    function switchRecordView(filter) {
+      currentRecordFilter = filter;
+      document.querySelectorAll('#page-records .tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderRecords();
+    }
+
+    function renderRecords() {
+      const container = document.getElementById('recordList');
+      let records = [...state.records].reverse();
+      
+      if (currentRecordFilter !== 'all') {
+        records = records.filter(r => r.category === currentRecordFilter);
+      }
+      
+      if (records.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div>暂无打卡记录</div></div>';
+        return;
+      }
+      
+      const grouped = {};
+      records.forEach(r => {
+        const date = r.time.split('T')[0];
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push(r);
+      });
+      
+      container.innerHTML = Object.entries(grouped).slice(0, 7).map(([date, items]) => `
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 12px; color: var(--accent); margin-bottom: 8px;">${date}</div>
+          ${items.map(item => `
+            <div class="record-item">
+              <span>${item.actionName}</span>
+              <span class="record-time">${new Date(item.time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    function showBatchCheckModal() {
+      const modal = document.getElementById('batchCheckModal');
+      const list = document.getElementById('batchActionList');
+      const todayActions = getTodayActions();
+      
+      selectedBatchActions.clear();
+      
+      list.innerHTML = todayActions.map(action => `
+        <button class="batch-btn" data-id="${action.id}" data-cat="${action.category}" onclick="toggleBatchAction(this)">${action.name}</button>
+      `).join('');
+      
+      modal.classList.add('active');
+    }
+
+    function toggleBatchAction(btn) {
+      const id = btn.dataset.id;
+      const cat = btn.dataset.cat;
+      const key = cat + '_' + id;
+      
+      if (selectedBatchActions.has(key)) {
+        selectedBatchActions.delete(key);
+        btn.classList.remove('active');
+      } else {
+        selectedBatchActions.add(key);
+        btn.classList.add('active');
+      }
+    }
+
+    function confirmBatchCheck() {
+      const today = new Date().toISOString().split('T')[0];
+      if (!state.checks[today]) state.checks[today] = {};
+      
+      selectedBatchActions.forEach(key => {
+        const [cat, id] = key.split('_');
+        if (!state.checks[today][cat]) state.checks[today][cat] = {};
+        
+        const action = (state.customActions[cat] || []).find(a => a.id === id);
+        const actionName = action ? action.name : '未知';
+        
+        state.checks[today][cat][id] = { time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) };
+        
+        if (!state.records.some(r => r.actionId === id && r.time.startsWith(today))) {
+          state.records.unshift({
+            id: Date.now() + Math.random(),
+            actionId: id,
+            actionName,
+            category: cat,
+            time: new Date().toISOString()
+          });
+        }
+      });
+      
+      if (state.records.length > 100) state.records = state.records.slice(0, 100);
+      
+      saveState();
+      closeModal('batchCheckModal');
+      updateUI();
+      
+      if (selectedBatchActions.size > 0) {
+        alert(`✅ 批量打卡成功！${selectedBatchActions.size}项已完成`);
+      }
+    }
+
+    function batchCheckCategory(category) {
+      const today = new Date().toISOString().split('T')[0];
+      if (!state.checks[today]) state.checks[today] = {};
+      if (!state.checks[today][category]) state.checks[today][category] = {};
+      
+      const actions = state.customActions[category] || [];
+      const todayOfWeek = new Date().getDay();
+      
+      let count = 0;
+      actions.forEach(action => {
+        let shouldCheck = false;
+        if (action.period === 'daily') shouldCheck = true;
+        else if (action.period === 'weekly' && action.weekDay === todayOfWeek) shouldCheck = true;
+        else if (action.period === 'weekly_12' && action.weekDays && action.weekDays.includes(todayOfWeek)) shouldCheck = true;
+        
+        if (shouldCheck && !state.checks[today][category][action.id]) {
+          state.checks[today][category][action.id] = { time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) };
+          state.records.unshift({
+            id: Date.now() + Math.random(),
+            actionId: action.id,
+            actionName: action.name,
+            category: category,
+            time: new Date().toISOString()
+          });
+          count++;
+        }
+      });
+      
+      if (state.records.length > 100) state.records = state.records.slice(0, 100);
+      
+      saveState();
+      updateUI();
+      
+      if (count > 0) {
+        alert(`✅ ${count}项已打卡`);
+      } else {
+        alert('今日该分类已全部打卡');
+      }
+    }
+
+    function showAddActionModal(category) {
+      editingActionId = null;
+      editingActionCategory = category;
+      document.getElementById('actionModalTitle').textContent = '添加打卡项';
+      document.getElementById('actionName').value = '';
+      document.getElementById('actionTime').value = '08:00';
+      document.getElementById('actionDesc').value = '';
+      document.getElementById('actionPeriod').value = category === 'special' ? 'weekly_12' : 'daily';
+      document.getElementById('actionModal').classList.add('active');
+    }
+
+    function editAction(actionId, category) {
+      const action = (state.customActions[category] || []).find(a => a.id === actionId);
+      if (!action) return;
+      
+      editingActionId = actionId;
+      editingActionCategory = category;
+      document.getElementById('actionModalTitle').textContent = '编辑打卡项';
+      document.getElementById('actionName').value = action.name;
+      document.getElementById('actionTime').value = action.time;
+      document.getElementById('actionDesc').value = action.desc || '';
+      document.getElementById('actionPeriod').value = action.period || 'daily';
+      document.getElementById('actionModal').classList.add('active');
+    }
+
+    function saveAction() {
+      const name = document.getElementById('actionName').value.trim();
+      const time = document.getElementById('actionTime').value;
+      const desc = document.getElementById('actionDesc').value.trim();
+      const period = document.getElementById('actionPeriod').value;
+      
+      if (!name) {
+        alert('请输入名称');
+        return;
+      }
+      
+      if (!state.customActions[editingActionCategory]) {
+        state.customActions[editingActionCategory] = [];
+      }
+      
+      if (editingActionId) {
+        const actionIndex = state.customActions[editingActionCategory].findIndex(a => a.id === editingActionId);
+        if (actionIndex !== -1) {
+          state.customActions[editingActionCategory][actionIndex] = {
+            ...state.customActions[editingActionCategory][actionIndex],
+            name, time, desc, period
+          };
+        }
+      } else {
+        const newId = Date.now().toString();
+        const maxOrder = Math.max(0, ...state.customActions[editingActionCategory].map(a => a.order || 0));
+        state.customActions[editingActionCategory].push({
+          id: newId,
+          name,
+          time,
+          desc,
+          period,
+          order: maxOrder + 1
+        });
+      }
+      
+      saveState();
+      closeModal('actionModal');
+      updateUI();
+      
+      alert('✅ 保存成功');
+    }
+
+    function deleteAction(actionId, category) {
+      if (!confirm('确定要删除这个打卡项吗？')) return;
+      
+      state.customActions[category] = (state.customActions[category] || []).filter(a => a.id !== actionId);
+      
+      const today = new Date().toISOString().split('T')[0];
+      if (state.checks[today] && state.checks[today][category]) {
+        delete state.checks[today][category][actionId];
+      }
+      
+      saveState();
+      updateUI();
+    }
+
+    function editActionTime(element, actionId, category) {
+      editingActionElement = element;
+      editingActionId = actionId;
+      editingActionCategory = category;
+      
+      const action = (state.customActions[category] || []).find(a => a.id === actionId);
+      if (action) {
+        document.getElementById('editTimeInput').value = action.time;
+      }
+      document.getElementById('editTimeModal').classList.add('active');
+    }
+
+    function confirmEditTime() {
+      const newTime = document.getElementById('editTimeInput').value;
+      if (editingActionElement && newTime && editingActionId && editingActionCategory) {
+        const action = (state.customActions[editingActionCategory] || []).find(a => a.id === editingActionId);
+        if (action) {
+          action.time = newTime;
+          saveState();
+          updateUI();
+        }
+      }
+      closeModal('editTimeModal');
+    }
+
+    function showEditTrainingModal() {
+      const daySelect = document.getElementById('editTrainingDay');
+      const contentArea = document.getElementById('editTrainingContent');
+      const today = new Date().getDay();
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      
+      daySelect.value = days[today];
+      const data = trainingData[days[today]];
+      
+      if (data.exercises) {
+        contentArea.value = data.exercises.map(ex => `${ex.name}\n${ex.sets}`).join('\n\n');
+      } else {
+        contentArea.value = data.desc || '';
+      }
+      
+      document.getElementById('editTrainingModal').classList.add('active');
+    }
+
+    function saveTrainingEdit() {
+      const day = document.getElementById('editTrainingDay').value;
+      const content = document.getElementById('editTrainingContent').value;
+      
+      const lines = content.split('\n').filter(l => l.trim());
+      const exercises = [];
+      
+      for (let i = 0; i < lines.length; i += 2) {
+        if (lines[i] && lines[i + 1]) {
+          exercises.push({ name: lines[i].trim(), sets: lines[i + 1].trim() });
+        }
+      }
+      
+      if (exercises.length > 0) {
+        trainingData[day] = { ...trainingData[day], name: trainingData[day].name, exercises };
+        delete trainingData[day].type;
+        delete trainingData[day].desc;
+      } else {
+        trainingData[day] = { ...trainingData[day], name: trainingData[day].name, type: 'rest', desc: content };
+        delete trainingData[day].exercises;
+      }
+      
+      state.customTraining = {};
+      for (const key of Object.keys(trainingData)) {
+        if (trainingData[key].exercises || trainingData[key].type) {
+          state.customTraining[key] = trainingData[key];
+        }
+      }
+      
+      saveState();
+      closeModal('editTrainingModal');
+      updateUI();
+      
+      alert('✅ 训练计划已保存');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    let currentLogActionId = null;
+    let currentLogCategory = null;
+
+    function showLogModal(actionId, category) {
+      currentLogActionId = actionId;
+      currentLogCategory = category;
+      
+      const action = (state.customActions[category] || []).find(a => a.id === actionId);
+      const actionName = action ? action.name : '未知项目';
+      document.getElementById('logModalTitle').textContent = '记录日志 - ' + actionName;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const logKey = category + '_' + actionId;
+      
+      document.getElementById('logContent').value = state.logs && state.logs[logKey] && state.logs[logKey][today] || '';
+      
+      renderLogHistory(logKey);
+      
+      document.getElementById('logModal').classList.add('active');
+    }
+
+    function renderLogHistory(logKey) {
+      const container = document.getElementById('logHistory');
+      const logs = state.logs && state.logs[logKey] ? Object.entries(state.logs[logKey]).slice(-5).reverse() : [];
+      
+      if (logs.length === 0) {
+        container.innerHTML = '<p style="font-size: 11px; color: var(--text-secondary);">暂无历史记录</p>';
+        return;
+      }
+      
+      container.innerHTML = logs.map(([date, content]) => `
+        <div style="padding: 8px; background: var(--bg-card); border-radius: 6px; margin-bottom: 6px;">
+          <div style="font-size: 10px; color: var(--accent);">${date}</div>
+          <div style="font-size: 12px; margin-top: 4px;">${content || '(无内容)'}</div>
+        </div>
+      `).join('');
+    }
+
+    function saveLog() {
+      const content = document.getElementById('logContent').value.trim();
+      const today = new Date().toISOString().split('T')[0];
+      const logKey = currentLogCategory + '_' + currentLogActionId;
+      
+      if (!state.logs) state.logs = {};
+      if (!state.logs[logKey]) state.logs[logKey] = {};
+      
+      state.logs[logKey][today] = content;
+      
+      saveState();
+      closeModal('logModal');
+      updateUI();
+    }
+
+    let currentExerciseDay = null;
+    let currentExerciseIndex = null;
+
+    function showExerciseModal(day, index = null) {
+      currentExerciseDay = day;
+      currentExerciseIndex = index;
+      
+      const dayData = trainingData[day];
+      
+      if (index !== null && dayData.exercises && dayData.exercises[index]) {
+        document.getElementById('exerciseModalTitle').textContent = '编辑训练项目';
+        document.getElementById('exerciseName').value = dayData.exercises[index].name || '';
+        document.getElementById('exerciseSets').value = dayData.exercises[index].sets || '';
+      } else {
+        document.getElementById('exerciseModalTitle').textContent = '添加训练项目';
+        document.getElementById('exerciseName').value = '';
+        document.getElementById('exerciseSets').value = '';
+      }
+      
+      document.getElementById('exerciseModal').classList.add('active');
+    }
+
+    function saveExercise() {
+      const name = document.getElementById('exerciseName').value.trim();
+      const sets = document.getElementById('exerciseSets').value.trim();
+      
+      if (!name) {
+        alert('请输入项目名称');
+        return;
+      }
+      
+      const dayData = trainingData[currentExerciseDay];
+      if (!dayData.exercises) dayData.exercises = [];
+      
+      if (currentExerciseIndex !== null) {
+        dayData.exercises[currentExerciseIndex] = { name, sets };
+      } else {
+        dayData.exercises.push({ name, sets });
+      }
+      
+      state.customTraining = {};
+      for (const key of Object.keys(trainingData)) {
+        if (trainingData[key].exercises || trainingData[key].type) {
+          state.customTraining[key] = trainingData[key];
+        }
+      }
+      
+      saveState();
+      closeModal('exerciseModal');
+      updateUI();
+    }
+
+    function deleteExercise(day, index) {
+      if (!confirm('确定要删除这个训练项目吗？')) return;
+      
+      const dayData = trainingData[day];
+      if (dayData.exercises && dayData.exercises[index]) {
+        dayData.exercises.splice(index, 1);
+        
+        state.customTraining = {};
+        for (const key of Object.keys(trainingData)) {
+          if (trainingData[key].exercises || trainingData[key].type) {
+            state.customTraining[key] = trainingData[key];
+          }
+        }
+        
+        saveState();
+        updateUI();
+      }
+    }
+
+    function showProgressModal() {
+      document.getElementById('startDateInput').value = state.startDate || '';
+      document.getElementById('currentPhaseInput').value = state.currentPhase || 1;
+      document.getElementById('progressModal').classList.add('active');
+    }
+
+    function saveProgress() {
+      const startDate = document.getElementById('startDateInput').value;
+      const currentPhase = parseInt(document.getElementById('currentPhaseInput').value);
+      
+      state.startDate = startDate;
+      state.currentPhase = currentPhase;
+      
+      saveState();
+      closeModal('progressModal');
+      updateUI();
+    }
+
+    function editTrainingTitle(day) {
+      const newName = prompt('请输入新的训练日名称:', trainingData[day].name);
+      if (newName && newName.trim()) {
+        trainingData[day].name = newName.trim();
+        
+        state.customTraining = {};
+        for (const key of Object.keys(trainingData)) {
+          if (trainingData[key].exercises || trainingData[key].type) {
+            state.customTraining[key] = trainingData[key];
+          }
+        }
+        
+        saveState();
+        updateUI();
+      }
+    }
+
+    function checkIn() {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const todayActions = getTodayActions();
+      const todayChecks = state.checks[today] || {};
+      
+      let completedCount = 0;
+      todayActions.forEach(action => {
+        if (todayChecks[action.category] && todayChecks[action.category][action.id]) {
+          completedCount++;
+        }
+      });
+      
+      const lastCheck = localStorage.getItem('lastCheckIn');
+      if (lastCheck !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (lastCheck === yesterday.toISOString().split('T')[0]) {
+          state.streak++;
+        } else if (lastCheck !== today) {
+          state.streak = 1;
+        }
+        localStorage.setItem('lastCheckIn', today);
+      }
+      
+      saveState();
+      updateUI();
+      alert('✅ 打卡成功！今日已完成 ' + completedCount + '/' + todayActions.length + ' 项');
+    }
+
+    function addWeight() {
+      const weight = prompt('请输入体重（斤）:');
+      if (weight) {
+        const today = new Date().toISOString().split('T')[0];
+        state.weights.push({ date: today, weight: parseFloat(weight) });
+        saveState();
+        updateUI();
+      }
+    }
+
+    function clearAllData() {
+      if (!confirm('确定要清除所有数据吗？此操作不可恢复！')) return;
+      localStorage.removeItem('etreState');
+      localStorage.removeItem('lastCheckIn');
+      alert('✅ 数据已清除，页面将刷新...');
+      location.reload();
+    }
+
+    function renderWeightRecords() {
+      const container = document.getElementById('weightRecords');
+      if (state.weights.length === 0) {
+        container.innerHTML = '<p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">暂无记录</p>';
+        return;
+      }
+      
+      container.innerHTML = state.weights.slice(-7).map(w => `
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+          <span style="color: var(--text-secondary);">${w.date}</span>
+          <span style="color: var(--accent); font-weight: 600;">${w.weight}斤</span>
+        </div>
+      `).join('');
+    }
+
+    function renderCurrentProgress() {
+      const container = document.getElementById('currentProgressCard');
+      const now = new Date();
+      
+      if (!state.startDate) {
+        container.innerHTML = '<div class="card" style="border-color: var(--info);"><div style="text-align: center; padding: 20px;"><p style="color: var(--text-secondary); margin-bottom: 12px;">尚未设置起始日期</p><button class="btn btn-primary" onclick="showProgressModal()">设置起始日</button></div></div>';
+        return;
+      }
+      
+      const start = new Date(state.startDate);
+      const daysSinceStart = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+      
+      let currentPhaseName = '';
+      let phaseRange = '';
+      if (daysSinceStart <= 14) {
+        currentPhaseName = '戒断与重组期';
+        phaseRange = '第 1-14 天';
+      } else if (daysSinceStart <= 45) {
+        currentPhaseName = '脑雾消散与炎症褪去';
+        phaseRange = '第 15-45 天';
+      } else if (daysSinceStart <= 90) {
+        currentPhaseName = '雄风与体能巅峰';
+        phaseRange = '第 45-90 天';
+      } else {
+        currentPhaseName = 'CNS强健 & 极限挑战';
+        phaseRange = '第 90+ 天';
+      }
+      
+      container.innerHTML = `
+        <div class="card" style="border-color: var(--accent); background: linear-gradient(135deg, #f0fff4, #e8f5e9);">
+          <div style="text-align: center; padding: 16px;">
+            <div style="font-size: 12px; color: var(--text-secondary);">起始日期</div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${state.startDate}</div>
+            <div style="font-size: 32px; font-weight: 800; color: var(--accent); margin: 12px 0;">第 ${daysSinceStart} 天</div>
+            <div style="font-size: 14px; font-weight: 600; color: var(--accent);">${currentPhaseName}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">${phaseRange}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const page = item.dataset.page;
+        
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        
+        if (page === 'records') renderRecords();
+        if (page === 'home') renderStats();
+        if (page === 'progress') renderCurrentProgress();
+      });
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('SW registered'))
+        .catch(err => console.log('SW error:', err));
+    }
+
+    loadState();
+  </script>
+</body>
+</html>
