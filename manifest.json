@@ -1,17 +1,47 @@
 {
   "name": "eTRE健体管理系统",
   "short_name": "eTRE健体",
-  "description": "每日能量与内分泌时间表管理",
+  "description": "增强型时间限制进食( eTRE )健体管理系统 - 每日打卡、训练计划、进度追踪",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#00ff88",
+  "background_color": "#f5f5f7",
+  "theme_color": "#34c759",
   "orientation": "portrait",
+  "scope": "/",
+  "lang": "zh-CN",
+  "categories": ["healthcare", "fitness", "lifestyle"],
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0a' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%2300ff88'>💪</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334c759' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>💪</text></svg>",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334c759' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>💪</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2334c759' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>💪</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "今日打卡",
+      "short_name": "打卡",
+      "description": "查看今日打卡进度",
+      "url": "/?page=home"
+    },
+    {
+      "name": "训练计划",
+      "short_name": "训练",
+      "description": "查看训练计划",
+      "url": "/?page=training"
     }
   ]
 }
