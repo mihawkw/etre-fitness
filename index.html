@@ -348,13 +348,21 @@
     <div class="modal">
       <div class="modal-title" id="logModalTitle">记录日志</div>
       <div class="modal-field">
+        <label>选择日期</label>
+        <input type="date" id="logDate">
+      </div>
+      <div class="modal-field">
         <label>详情记录</label>
         <textarea id="logContent" placeholder="记录今日详情..."></textarea>
       </div>
-      <div id="logHistory" style="max-height: 150px; overflow-y: auto; margin-top: 12px;"></div>
+      <div style="margin-top: 12px;">
+        <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">历史记录</div>
+        <div id="logHistory" style="max-height: 200px; overflow-y: auto;"></div>
+      </div>
       <div class="modal-buttons">
+        <button class="btn btn-danger" onclick="deleteCurrentLog()" id="deleteLogBtn" style="display: none;">删除</button>
         <button class="btn btn-secondary" onclick="closeModal('logModal')">关闭</button>
-        <button class="btn btn-primary" onclick="saveLog()">保存日志</button>
+        <button class="btn btn-primary" onclick="saveLog()">保存</button>
       </div>
     </div>
   </div>
@@ -1222,28 +1230,52 @@
 
     let currentLogActionId = null;
     let currentLogCategory = null;
+    let currentLogDate = null;
 
     function showLogModal(actionId, category) {
       currentLogActionId = actionId;
       currentLogCategory = category;
+      currentLogDate = new Date().toISOString().split('T')[0];
       
       const action = (state.customActions[category] || []).find(a => a.id === actionId);
       const actionName = action ? action.name : '未知项目';
       document.getElementById('logModalTitle').textContent = '记录日志 - ' + actionName;
       
-      const today = new Date().toISOString().split('T')[0];
       const logKey = category + '_' + actionId;
       
-      document.getElementById('logContent').value = state.logs && state.logs[logKey] && state.logs[logKey][today] || '';
+      document.getElementById('logDate').value = currentLogDate;
+      document.getElementById('logContent').value = state.logs && state.logs[logKey] && state.logs[logKey][currentLogDate] || '';
       
       renderLogHistory(logKey);
+      updateDeleteButton();
       
       document.getElementById('logModal').classList.add('active');
     }
 
+    function updateDeleteButton() {
+      const deleteBtn = document.getElementById('deleteLogBtn');
+      const logKey = currentLogCategory + '_' + currentLogActionId;
+      const date = document.getElementById('logDate').value;
+      
+      if (state.logs && state.logs[logKey] && state.logs[logKey][date]) {
+        deleteBtn.style.display = 'block';
+      } else {
+        deleteBtn.style.display = 'none';
+      }
+    }
+
+    document.getElementById('logDate').addEventListener('change', function() {
+      currentLogDate = this.value;
+      const logKey = currentLogCategory + '_' + currentLogActionId;
+      document.getElementById('logContent').value = state.logs && state.logs[logKey] && state.logs[logKey][currentLogDate] || '';
+      updateDeleteButton();
+    });
+
     function renderLogHistory(logKey) {
       const container = document.getElementById('logHistory');
-      const logs = state.logs && state.logs[logKey] ? Object.entries(state.logs[logKey]).slice(-5).reverse() : [];
+      const logs = state.logs && state.logs[logKey] ? Object.entries(state.logs[logKey]) : [];
+      
+      logs.sort((a, b) => b[0].localeCompare(a[0]));
       
       if (logs.length === 0) {
         container.innerHTML = '<p style="font-size: 11px; color: var(--text-secondary);">暂无历史记录</p>';
@@ -1251,26 +1283,67 @@
       }
       
       container.innerHTML = logs.map(([date, content]) => `
-        <div style="padding: 8px; background: var(--bg-card); border-radius: 6px; margin-bottom: 6px;">
-          <div style="font-size: 10px; color: var(--accent);">${date}</div>
-          <div style="font-size: 12px; margin-top: 4px;">${content || '(无内容)'}</div>
+        <div style="padding: 10px; background: var(--bg-card); border-radius: 8px; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--border);" onclick="editLogDate('${date}')">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 12px; color: var(--accent); font-weight: 600;">${date}</div>
+            <div style="font-size: 10px; color: var(--text-secondary);">点击编辑</div>
+          </div>
+          <div style="font-size: 12px; margin-top: 6px; color: var(--text-primary);">${content || '(无内容)'}</div>
         </div>
       `).join('');
     }
 
+    function editLogDate(date) {
+      currentLogDate = date;
+      document.getElementById('logDate').value = date;
+      const logKey = currentLogCategory + '_' + currentLogActionId;
+      document.getElementById('logContent').value = state.logs && state.logs[logKey] && state.logs[logKey][date] || '';
+      updateDeleteButton();
+    }
+
     function saveLog() {
       const content = document.getElementById('logContent').value.trim();
-      const today = new Date().toISOString().split('T')[0];
+      const date = document.getElementById('logDate').value;
       const logKey = currentLogCategory + '_' + currentLogActionId;
+      
+      if (!date) {
+        alert('请选择日期');
+        return;
+      }
       
       if (!state.logs) state.logs = {};
       if (!state.logs[logKey]) state.logs[logKey] = {};
       
-      state.logs[logKey][today] = content;
+      if (content) {
+        state.logs[logKey][date] = content;
+      } else {
+        delete state.logs[logKey][date];
+      }
       
       saveState();
       closeModal('logModal');
       updateUI();
+    }
+
+    function deleteCurrentLog() {
+      if (!confirm('确定要删除这条日志记录吗？')) return;
+      
+      const date = document.getElementById('logDate').value;
+      const logKey = currentLogCategory + '_' + currentLogActionId;
+      
+      if (state.logs && state.logs[logKey] && state.logs[logKey][date]) {
+        delete state.logs[logKey][date];
+        
+        if (Object.keys(state.logs[logKey]).length === 0) {
+          delete state.logs[logKey];
+        }
+        
+        saveState();
+        document.getElementById('logContent').value = '';
+        updateDeleteButton();
+        renderLogHistory(logKey);
+        updateUI();
+      }
     }
 
     let currentExerciseDay = null;
