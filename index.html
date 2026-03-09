@@ -123,6 +123,31 @@
     .breathing-instruction { text-align: center; font-size: 18px; color: var(--accent); margin-bottom: 20px; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     .current-time { animation: pulse 2s infinite; }
+    .selfcheck-card { background: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+    .selfcheck-card.red-line { border-left: 4px solid var(--danger); }
+    .selfcheck-card.warning { border-left: 4px solid var(--warning); }
+    .selfcheck-card.success { border-left: 4px solid var(--accent); }
+    .selfcheck-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+    .selfcheck-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .selfcheck-item:last-child { border-bottom: none; }
+    .selfcheck-label { font-size: 13px; color: var(--text-primary); }
+    .selfcheck-checkbox { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .selfcheck-checkbox.checked { background: var(--accent); border-color: var(--accent); }
+    .selfcheck-checkbox.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+    .selfcheck-boolean { display: flex; gap: 8px; }
+    .bool-btn { padding: 4px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+    .bool-btn.yes { background: var(--danger); color: white; border-color: var(--danger); }
+    .bool-btn.no { background: var(--accent); color: white; border-color: var(--accent); }
+    .score-display { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .state-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+    .state-alpha { background: var(--danger); color: white; }
+    .state-beta { background: var(--warning); color: white; }
+    .state-gamma { background: #9c27b0; color: white; }
+    .state-delta { background: var(--accent); color: white; }
+    .state-omega { background: linear-gradient(135deg, #9c27b0, #ff9500); color: white; }
+    .status-select { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 12px; }
+    .range-input { width: 100%; margin: 8px 0; }
+    .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); }
   </style>
 </head>
 <body>
@@ -208,6 +233,18 @@
         </div>
       </div>
       
+      <div class="page" id="page-selfcheck">
+        <div class="section-title">🧠 GDOM 系统自检</div>
+        
+        <div class="tab-buttons">
+          <button class="tab-btn active" onclick="switchSelfcheckTab('daily')">日级</button>
+          <button class="tab-btn" onclick="switchSelfcheckTab('weekly')">周级</button>
+          <button class="tab-btn" onclick="switchSelfcheckTab('macro')">宏观</button>
+        </div>
+        
+        <div id="selfcheckContent"></div>
+      </div>
+      
       <div class="page" id="page-progress">
         <div class="section-title">📈 进阶时间轴 <button class="btn btn-small btn-secondary" onclick="showProgressModal()">设置</button></div>
         
@@ -260,6 +297,7 @@
       <div class="nav-item" data-page="training"><span class="icon">🏋️</span>训练</div>
       <div class="nav-item" data-page="evening"><span class="icon">🌙</span>晚间</div>
       <div class="nav-item" data-page="records"><span class="icon">📋</span>记录</div>
+      <div class="nav-item" data-page="selfcheck"><span class="icon">🧠</span>自检</div>
       <div class="nav-item" data-page="progress"><span class="icon">📈</span>进度</div>
     </nav>
   </div>
@@ -381,6 +419,25 @@
       <div class="modal-buttons">
         <button class="btn btn-secondary" onclick="closeModal('exerciseModal')">取消</button>
         <button class="btn btn-primary" onclick="saveExercise()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="weightModal">
+    <div class="modal">
+      <div class="modal-title" id="weightModalTitle">添加体重记录</div>
+      <div class="modal-field">
+        <label>日期</label>
+        <input type="date" id="weightDate">
+      </div>
+      <div class="modal-field">
+        <label>体重（斤）</label>
+        <input type="number" id="weightValue" step="0.1" placeholder="例如：160">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-danger" onclick="deleteWeightRecord()" id="deleteWeightBtn" style="display: none;">删除</button>
+        <button class="btn btn-secondary" onclick="closeModal('weightModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveWeightRecord()">保存</button>
       </div>
     </div>
   </div>
@@ -517,6 +574,10 @@
         state.customActions = {};
       }
       
+      if (!state.weights || !Array.isArray(state.weights)) {
+        state.weights = [];
+      }
+      
       const categories = ['meal', 'evening', 'special', 'training'];
       let hasAnyActions = false;
       categories.forEach(cat => {
@@ -587,6 +648,7 @@
       renderWeightRecords();
       renderStats();
       renderRecords();
+      renderSelfcheck();
       renderCurrentProgress();
       restoreCheckStates();
       
@@ -925,6 +987,335 @@
       document.querySelectorAll('#page-records .tab-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       renderRecords();
+    }
+
+    let currentSelfcheckTab = 'daily';
+    
+    function switchSelfcheckTab(tab) {
+      currentSelfcheckTab = tab;
+      document.querySelectorAll('#page-selfcheck .tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderSelfcheck();
+    }
+
+    function initSelfcheckData() {
+      if (!state.selfcheck) {
+        state.selfcheck = {
+          daily: {},
+          weekly: {},
+          macro: {}
+        };
+      }
+    }
+
+    function getTodayKey() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function getWeekKey() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const week = Math.ceil((now - new Date(year, 0, 1)) / (7 * 24 * 60 * 60 * 1000));
+      return year + '-W' + week;
+    }
+
+    function renderSelfcheck() {
+      initSelfcheckData();
+      const container = document.getElementById('selfcheckContent');
+      
+      if (currentSelfcheckTab === 'daily') {
+        renderDailyCheck(container);
+      } else if (currentSelfcheckTab === 'weekly') {
+        renderWeeklyCheck(container);
+      } else {
+        renderMacroCheck(container);
+      }
+    }
+
+    function renderDailyCheck(container) {
+      const today = getTodayKey();
+      const data = state.selfcheck.daily[today] || {};
+      
+      const l1Items = [
+        { key: 'sleep', label: '强制休眠：6+小时无干扰睡眠', score: 1 },
+        { key: 'eating', label: '物理锚定进食：全感官专注进食', score: 1 },
+        { key: 'exercise', label: '躯体极限量化：运动释放压力', score: 1 }
+      ];
+      
+      const l3Items = [
+        { key: 'flow', label: '高压做功：2小时心流状态', score: 1 },
+        { key: 'cashout', label: '物理套现：真实奖赏而非刷手机', score: 1 }
+      ];
+      
+      let l1Score = 0;
+      l1Items.forEach(item => { if (data[item.key]) l1Score += item.score; });
+      
+      let l3Score = 0;
+      l3Items.forEach(item => { if (data[item.key]) l3Score += item.score; });
+      
+      const firewallItems = [
+        { key: 'parasite', label: 'L3寄生剥夺：未摄入秒级反馈模拟器' },
+        { key: 'compensation', label: '非法代偿：未因受挫而暴食' },
+        { key: 'multitask', label: '单线程破坏：未边工作边娱乐' }
+      ];
+      
+      const firewallViolated = firewallItems.some(item => data[item.key] === true);
+      
+      container.innerHTML = `
+        <div class="selfcheck-card ${l1Score === 0 ? 'red-line' : l1Score < 2 ? 'warning' : 'success'}">
+          <div class="selfcheck-title">📡 日级底座监控 <span style="float:right; font-size:12px; color:var(--text-secondary)">${today}</span></div>
+          
+          <div style="margin-bottom: 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:13px; font-weight:600;">L1 硬件稳态 (得分: ${l1Score}/3)</span>
+              ${l1Score === 0 ? '<span style="color:var(--danger); font-size:11px;">⚠️ 红线触发</span>' : ''}
+            </div>
+            ${l1Items.map(item => `
+              <div class="selfcheck-item">
+                <span class="selfcheck-label">${item.label}</span>
+                <div class="selfcheck-checkbox ${data[item.key] ? 'checked' : ''}" onclick="toggleSelfcheck('daily', '${item.key}', this)"></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="selfcheck-card ${firewallViolated ? 'red-line' : 'success'}">
+          <div class="selfcheck-title">🛡️ 防火墙与毒性泄漏 <span style="float:right; font-size:11px; color:var(--danger)">布尔值</span></div>
+          ${firewallItems.map(item => `
+            <div class="selfcheck-item">
+              <span class="selfcheck-label">${item.label}</span>
+              <div class="selfcheck-boolean">
+                <button class="bool-btn ${data[item.key] === true ? 'yes' : ''}" onclick="setBoolValue('daily', '${item.key}', true, this)">是</button>
+                <button class="bool-btn ${data[item.key] === false ? 'no' : ''}" onclick="setBoolValue('daily', '${item.key}', false, this)">否</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="selfcheck-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:13px; font-weight:600;">L3 分形推力 (得分: ${l3Score}/2)</span>
+          </div>
+          ${l3Items.map(item => `
+            <div class="selfcheck-item">
+              <span class="selfcheck-label">${item.label}</span>
+              <div class="selfcheck-checkbox ${data[item.key] ? 'checked' : ''}" onclick="toggleSelfcheck('daily', '${item.key}', this)"></div>
+            </div>
+          `).join('')}
+        </div>
+        
+        ${renderDiagnosis(data)}
+      `;
+    }
+
+    function renderWeeklyCheck(container) {
+      const weekKey = getWeekKey();
+      const data = state.selfcheck.weekly[weekKey] || {};
+      
+      container.innerHTML = `
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">🔄 周级路由审计 <span style="float:right; font-size:12px; color:var(--text-secondary)">${weekKey}</span></div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">L2 压力值 (1-10)</span>
+            <select class="status-select" onchange="updateSelfcheckValue('weekly', 'l2Pressure', this.value)">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${data.l2Pressure == n ? 'selected' : ''}>${n}</option>`).join('')}
+            </select>
+          </div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">压力源定性</span>
+            <select class="status-select" onchange="updateSelfcheckValue('weekly', 'pressureSource', this.value)">
+              <option value="" ${!data.pressureSource ? 'selected' : ''}>--</option>
+              <option value="A" ${data.pressureSource === 'A' ? 'selected' : ''}>A: 生理硬件满载</option>
+              <option value="B" ${data.pressureSource === 'B' ? 'selected' : ''}>B: 社会软件赤字</option>
+            </select>
+          </div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">泄压后空虚感/阈值爬升</span>
+            <div class="selfcheck-boolean">
+              <button class="bool-btn ${data.aftermath === true ? 'yes' : ''}" onclick="setBoolValue('weekly', 'aftermath', true, this)">有</button>
+              <button class="bool-btn ${data.aftermath === false ? 'no' : ''}" onclick="setBoolValue('weekly', 'aftermath', false, this)">无</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">🎭 L2.5 跨能级谐振</div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">高摩擦输入：3小时静默区块</span>
+            <div class="selfcheck-checkbox ${data.silenceInput ? 'checked' : ''}" onclick="toggleSelfcheck('weekly', 'silenceInput', this)"></div>
+          </div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">同构映射：审美战栗/顿悟</span>
+            <div class="selfcheck-checkbox ${data.insight ? 'checked' : ''}" onclick="toggleSelfcheck('weekly', 'insight', this)"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMacroCheck(container) {
+      const data = state.selfcheck.macro;
+      
+      container.innerHTML = `
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">💰 现实资本蓄积</div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">C_r 水位状态</span>
+            <select class="status-select" onchange="updateSelfcheckValue('macro', 'capitalStatus', this.value)">
+              <option value="deficit" ${data.capitalStatus === 'deficit' ? 'selected' : ''}>赤字</option>
+              <option value="charging" ${data.capitalStatus === 'charging' ? 'selected' : ''}>蓄能中</option>
+              <option value="ready" ${data.capitalStatus === 'ready' ? 'selected' : ''}>阈值满足</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">🔑 双钥载体匹配度</div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">生物锁 (L1/L2) 吸引力</span>
+            <select class="status-select" onchange="updateSelfcheckValue('macro', 'bioLock', this.value)">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${data.bioLock == n ? 'selected' : ''}>${n}</option>`).join('')}
+            </select>
+          </div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">社会锁 (L3) 认知匹配</span>
+            <select class="status-select" onchange="updateSelfcheckValue('macro', 'socialLock', this.value)">
+              ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${data.socialLock == n ? 'selected' : ''}>${n}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">⏱️ 奇点倒计时</div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">距上次全频段谐振</span>
+            <select class="status-select" onchange="updateSelfcheckValue('macro', 'lastSingularity', this.value)">
+              <option value="" ${!data.lastSingularity ? 'selected' : ''}>--</option>
+              <option value="0-3" ${data.lastSingularity === '0-3' ? 'selected' : ''}>&lt;3个月</option>
+              <option value="3-6" ${data.lastSingularity === '3-6' ? 'selected' : ''}>3-6个月</option>
+              <option value="6-12" ${data.lastSingularity === '6-12' ? 'selected' : ''}>6-12个月</option>
+              <option value="12+" ${data.lastSingularity === '12+' ? 'selected' : ''}>12个月+</option>
+            </select>
+          </div>
+          
+          <div class="selfcheck-item">
+            <span class="selfcheck-label">受体清洗判定</span>
+            <div class="selfcheck-boolean">
+              <button class="bool-btn ${data.receptorWash === true ? 'yes' : ''}" onclick="setBoolValue('macro', 'receptorWash', true, this)">需要</button>
+              <button class="bool-btn ${data.receptorWash === false ? 'no' : ''}" onclick="setBoolValue('macro', 'receptorWash', false, this)">正常</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDiagnosis(dailyData) {
+      const today = getTodayKey();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = yesterday.toISOString().split('T')[0];
+      const yesterdayData = state.selfcheck.daily[yesterdayKey] || {};
+      
+      let l1Score = 0;
+      ['sleep', 'eating', 'exercise'].forEach(k => { if (dailyData[k]) l1Score++; });
+      let yes1Score = 0;
+      ['sleep', 'eating', 'exercise'].forEach(k => { if (yesterdayData[k]) yes1Score++; });
+      
+      const firewallViolated = ['parasite', 'compensation', 'multitask'].some(k => dailyData[k] === true);
+      const l2Pressure = state.selfcheck.weekly[getWeekKey()]?.l2Pressure || 0;
+      const capitalStatus = state.selfcheck.macro?.capitalStatus;
+      const bioLock = parseInt(state.selfcheck.macro?.bioLock || 0);
+      const socialLock = parseInt(state.selfcheck.macro?.socialLock || 0);
+      const lastSingularity = state.selfcheck.macro?.lastSingularity;
+      
+      let stateType = 'delta';
+      let stateLabel = '状态 Delta';
+      let stateDesc = '常规巡航';
+      let action = '维持L3做功，周末执行L2.5艺术谐振';
+      
+      if (l1Score < 2 && yes1Score < 2) {
+        stateType = 'alpha';
+        stateLabel = '状态 Alpha';
+        stateDesc = '底座破裂';
+        action = '冻结L3，物理休眠';
+      } else if (firewallViolated) {
+        stateType = 'beta';
+        stateLabel = '状态 Beta';
+        stateDesc = '毒性感染';
+        action = '物理断网，多巴胺断食24小时';
+      } else if (l2Pressure > 8) {
+        stateType = 'gamma';
+        stateLabel = '状态 Gamma';
+        stateDesc = 'L2爆压';
+        action = '启动安全泄压阀门，限时30分钟';
+      } else if (capitalStatus === 'ready' && bioLock > 8 && socialLock > 8 && (lastSingularity === '6-12' || lastSingularity === '12+')) {
+        stateType = 'omega';
+        stateLabel = '状态 Omega';
+        stateDesc = '奇点临近';
+        action = '启动全频段谐振协议';
+      }
+      
+      return `
+        <div class="selfcheck-card">
+          <div class="selfcheck-title">🎯 综合诊断输出</div>
+          <div class="state-badge state-${stateType}">${stateLabel} - ${stateDesc}</div>
+          <div style="font-size: 13px; color: var(--text-primary);">
+            <strong>建议行动：</strong>${action}
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleSelfcheck(period, key, btn) {
+      initSelfcheckData();
+      const keyStr = period === 'daily' ? getTodayKey() : getWeekKey();
+      
+      if (!state.selfcheck[period][keyStr]) {
+        state.selfcheck[period][keyStr] = {};
+      }
+      
+      state.selfcheck[period][keyStr][key] = !state.selfcheck[period][keyStr][key];
+      
+      saveState();
+      renderSelfcheck();
+    }
+
+    function setBoolValue(period, key, value, btn) {
+      initSelfcheckData();
+      const keyStr = period === 'daily' ? getTodayKey() : getWeekKey();
+      
+      if (!state.selfcheck[period][keyStr]) {
+        state.selfcheck[period][keyStr] = {};
+      }
+      
+      state.selfcheck[period][keyStr][key] = value;
+      
+      saveState();
+      renderSelfcheck();
+    }
+
+    function updateSelfcheckValue(period, key, value) {
+      initSelfcheckData();
+      const keyStr = period === 'weekly' ? getWeekKey() : 'main';
+      
+      if (!state.selfcheck[period][keyStr]) {
+        state.selfcheck[period][keyStr] = {};
+      }
+      
+      state.selfcheck[period][keyStr][key] = value;
+      
+      saveState();
+      if (period !== 'macro') {
+        renderSelfcheck();
+      }
     }
 
     function renderRecords() {
@@ -1482,16 +1873,6 @@
       alert('✅ 打卡成功！今日已完成 ' + completedCount + '/' + todayActions.length + ' 项');
     }
 
-    function addWeight() {
-      const weight = prompt('请输入体重（斤）:');
-      if (weight) {
-        const today = new Date().toISOString().split('T')[0];
-        state.weights.push({ date: today, weight: parseFloat(weight) });
-        saveState();
-        updateUI();
-      }
-    }
-
     function clearAllData() {
       if (!confirm('确定要清除所有数据吗？此操作不可恢复！')) return;
       localStorage.removeItem('etreState');
@@ -1500,19 +1881,97 @@
       location.reload();
     }
 
+    let currentWeightIndex = null;
+
     function renderWeightRecords() {
       const container = document.getElementById('weightRecords');
-      if (state.weights.length === 0) {
+      if (!state.weights || state.weights.length === 0) {
         container.innerHTML = '<p style="font-size: 12px; color: var(--text-secondary); text-align: center; padding: 20px;">暂无记录</p>';
         return;
       }
       
-      container.innerHTML = state.weights.slice(-7).map(w => `
-        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
-          <span style="color: var(--text-secondary);">${w.date}</span>
-          <span style="color: var(--accent); font-weight: 600;">${w.weight}斤</span>
+      const sortedWeights = [...state.weights].sort((a, b) => b.date.localeCompare(a.date));
+      
+      container.innerHTML = sortedWeights.slice(0, 7).map((w, idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border);">
+          <div>
+            <span style="color: var(--text-secondary);">${w.date}</span>
+            <span style="color: var(--accent); font-weight: 600; margin-left: 12px;">${w.weight}斤</span>
+          </div>
+          <div>
+            <button class="edit-btn" onclick="editWeightRecord(${state.weights.indexOf(w)})">✏️</button>
+            <button class="delete-btn" onclick="confirmDeleteWeight(${state.weights.indexOf(w)})">🗑️</button>
+          </div>
         </div>
       `).join('');
+    }
+
+    function showWeightModal(isEdit = false) {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('weightDate').value = today;
+      document.getElementById('weightValue').value = '';
+      document.getElementById('deleteWeightBtn').style.display = 'none';
+      document.getElementById('weightModalTitle').textContent = isEdit ? '编辑体重记录' : '添加体重记录';
+      document.getElementById('weightModal').classList.add('active');
+    }
+
+    function addWeight() {
+      currentWeightIndex = null;
+      showWeightModal(false);
+    }
+
+    function editWeightRecord(index) {
+      currentWeightIndex = index;
+      const record = state.weights[index];
+      document.getElementById('weightDate').value = record.date;
+      document.getElementById('weightValue').value = record.weight;
+      document.getElementById('deleteWeightBtn').style.display = 'block';
+      document.getElementById('weightModalTitle').textContent = '编辑体重记录';
+      document.getElementById('weightModal').classList.add('active');
+    }
+
+    function confirmDeleteWeight(index) {
+      const record = state.weights[index];
+      if (!confirm(`确定要删除 ${record.date} 的体重记录（${record.weight}斤）吗？`)) {
+        return;
+      }
+      currentWeightIndex = index;
+      deleteWeightRecord();
+    }
+
+    function saveWeightRecord() {
+      const date = document.getElementById('weightDate').value;
+      const weight = parseFloat(document.getElementById('weightValue').value);
+      
+      if (!date || isNaN(weight)) {
+        alert('请填写完整的日期和体重');
+        return;
+      }
+      
+      if (currentWeightIndex !== null && currentWeightIndex >= 0) {
+        state.weights[currentWeightIndex] = { date, weight };
+      } else {
+        state.weights.push({ date, weight });
+      }
+      
+      state.weights.sort((a, b) => a.date.localeCompare(b.date));
+      
+      saveState();
+      closeModal('weightModal');
+      updateUI();
+    }
+
+    function deleteWeightRecord() {
+      if (currentWeightIndex === null || currentWeightIndex < 0) {
+        return;
+      }
+      
+      state.weights.splice(currentWeightIndex, 1);
+      
+      saveState();
+      closeModal('weightModal');
+      currentWeightIndex = null;
+      updateUI();
     }
 
     function renderCurrentProgress() {
