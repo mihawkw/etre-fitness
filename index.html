@@ -148,6 +148,41 @@
     .status-select { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 12px; }
     .range-input { width: 100%; margin: 8px 0; }
     .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); }
+    .recovery-page { background: #0D0D0D; color: #F3F4F6; min-height: 100%; }
+    .recovery-header { background: linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%); padding: 20px 16px; border-bottom: 1px solid #2A2A2A; }
+    .recovery-title { font-size: 18px; font-weight: 700; color: #F3F4F6; letter-spacing: 1px; }
+    .recovery-subtitle { font-size: 12px; color: #6B7280; margin-top: 4px; }
+    .recovery-status { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #3B82F6; animation: pulse-glow 2s infinite; }
+    @keyframes pulse-glow { 0%, 100% { opacity: 1; box-shadow: 0 0 4px #3B82F6; } 50% { opacity: 0.5; box-shadow: 0 0 8px #3B82F6; } }
+    .recovery-card { background: #1A1A1A; border-radius: 12px; padding: 16px; margin: 12px 16px; border: 1px solid #2A2A2A; }
+    .recovery-card-title { font-size: 14px; font-weight: 600; color: #F3F4F6; margin-bottom: 8px; }
+    .recovery-context { font-size: 12px; color: #9CA3AF; line-height: 1.5; margin-bottom: 16px; }
+    .recovery-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .recovery-btn-override { background: #3B82F6; color: white; }
+    .recovery-btn-override:active { background: #2563EB; }
+    .recovery-drawer { background: #262626; border-radius: 8px; padding: 16px; margin-top: 12px; display: none; }
+    .recovery-drawer.active { display: block; }
+    .recovery-drawer-title { font-size: 13px; font-weight: 600; color: #F3F4F6; margin-bottom: 8px; }
+    .recovery-drawer-text { font-size: 12px; color: #9CA3AF; line-height: 1.6; }
+    .recovery-checklist { display: flex; flex-direction: column; gap: 8px; }
+    .recovery-check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; background: #262626; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .recovery-check-item.checked { background: #064E3B; border: 1px solid #10B981; }
+    .recovery-check-item.checked .check-text { color: #10B981; }
+    .recovery-checkbox { width: 20px; height: 20px; border-radius: 4px; border: 2px solid #4B5563; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .recovery-check-item.checked .recovery-checkbox { background: #10B981; border-color: #10B981; }
+    .recovery-check-text { font-size: 13px; color: #D1D5DB; }
+    .recovery-check-desc { font-size: 11px; color: #6B7280; margin-top: 4px; }
+    .recovery-tab-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+    .recovery-tab-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #374151; background: transparent; color: #9CA3AF; font-size: 12px; cursor: pointer; }
+    .recovery-tab-btn.active { background: #1E3A5F; color: #60A5FA; border-color: #3B82F6; }
+    .recovery-list-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-bottom: 1px solid #2A2A2A; }
+    .recovery-list-item:last-child { border-bottom: none; }
+    .recovery-list-icon { font-size: 18px; }
+    .recovery-list-text { font-size: 13px; color: #E5E7EB; }
+    .recovery-blockquote { background: linear-gradient(135deg, #1E3A5F 0%, #0D0D0D 100%); border-left: 4px solid #3B82F6; padding: 20px; margin: 16px; border-radius: 0 8px 8px 0; }
+    .recovery-quote-text { font-size: 14px; color: #F3F4F6; line-height: 1.8; font-style: italic; }
+    .recovery-section-title { font-size: 16px; font-weight: 600; color: #F3F4F6; padding: 16px 16px 8px; }
   </style>
 </head>
 <body>
@@ -245,6 +280,102 @@
         <div id="selfcheckContent"></div>
       </div>
       
+      <div class="page" id="page-recovery">
+        <div class="recovery-header">
+          <div class="recovery-title">SYSTEM UPGRADE IN PROGRESS</div>
+          <div class="recovery-subtitle">多巴胺受体敏感化 / 糖原耗尽</div>
+          <div class="recovery-status">
+            <div class="pulse-dot"></div>
+            <span style="font-size: 12px; color: #9CA3AF;">当前状态：失望之谷。不适是生物修复的证明。</span>
+          </div>
+        </div>
+        
+        <div class="recovery-section-title">Module 1: 急性SOS协议</div>
+        <div class="recovery-card">
+          <div class="recovery-card-title">💧 焦虑覆盖</div>
+          <div class="recovery-context">下午感到烦躁？这是糖原耗尽导致的皮质醇飙升，并非真正的疲劳。</div>
+          <button class="recovery-btn recovery-btn-override" onclick="toggleRecoveryDrawer('sosDrawer')">执行: 2g 海盐水协议</button>
+          <div class="recovery-drawer" id="sosDrawer">
+            <div class="recovery-drawer-title">行动方案</div>
+            <div class="recovery-drawer-text">喝一杯加了一撮盐的温水。<br><br>机制：钠离子向肾上腺发出安全信号，在15分钟内抑制皮质醇飙升。</div>
+          </div>
+        </div>
+        
+        <div class="recovery-section-title">Module 2: 晚间空虚填补</div>
+        <div class="recovery-card">
+          <div class="recovery-card-title">🛁 副交感神经滋养 (晚间)</div>
+          <div class="recovery-context">你不是无聊，你是多巴胺饥饿。不要寻求快感，寻求身体舒缓。</div>
+          <div class="recovery-checklist" id="eveningChecklist">
+            <div class="recovery-check-item" onclick="toggleRecoveryCheck(0)">
+              <div class="recovery-checkbox">✓</div>
+              <div>
+                <div class="recovery-check-text">热疗干预：15分钟热水泡脚至轻微出汗</div>
+                <div class="recovery-check-desc">触发褪黑素释放</div>
+              </div>
+            </div>
+            <div class="recovery-check-item" onclick="toggleRecoveryCheck(1)">
+              <div class="recovery-checkbox">✓</div>
+              <div>
+                <div class="recovery-check-text">躯体按压：慢速泡沫轴滚动20分钟</div>
+                <div class="recovery-check-desc">释放内啡肽/催产素对抗触觉饥饿</div>
+              </div>
+            </div>
+            <div class="recovery-check-item" onclick="toggleRecoveryCheck(2)">
+              <div class="recovery-checkbox">✓</div>
+              <div>
+                <div class="recovery-check-text">感官降级：读实体书或闭眼听深度播客</div>
+                <div class="recovery-check-desc">零屏幕光</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="recovery-section-title">Module 3: 社交指南针</div>
+        <div class="recovery-card">
+          <div class="recovery-tab-buttons">
+            <button class="recovery-tab-btn active" onclick="switchRecoveryTab('safe', this)">安全区</button>
+            <button class="recovery-tab-btn" onclick="switchRecoveryTab('danger', this)">危险区</button>
+          </div>
+          <div id="safeZoneList">
+            <div class="recovery-list-item">
+              <span class="recovery-list-icon">🚶</span>
+              <span class="recovery-list-text">漫步交谈：城市漫游，双眼交替移动降低焦虑</span>
+            </div>
+            <div class="recovery-list-item">
+              <span class="recovery-list-icon">🐕</span>
+              <span class="recovery-list-text">宠物互动：猫咖/狗咖，15分钟抚摸=拥抱的催产素</span>
+            </div>
+            <div class="recovery-list-item">
+              <span class="recovery-list-icon">🎲</span>
+              <span class="recovery-list-text">共同聚焦任务：桌游、手工，创造稳定缓释多巴胺</span>
+            </div>
+            <div class="recovery-list-item">
+              <span class="recovery-list-icon">💆</span>
+              <span class="recovery-list-text">盲人按摩：专业物理触觉满足躯体剥夺</span>
+            </div>
+          </div>
+          <div id="dangerZoneList" style="display: none;">
+            <div class="recovery-list-item" style="opacity: 0.6;">
+              <span class="recovery-list-icon">🍽️</span>
+              <span class="recovery-list-text">晚餐聚会：破坏16-8断食窗口和抗炎状态</span>
+            </div>
+            <div class="recovery-list-item" style="opacity: 0.6;">
+              <span class="recovery-list-icon">🍺</span>
+              <span class="recovery-list-text">酒吧/夜店：高音量噪音和频闪触发交感神经恐慌</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="recovery-blockquote">
+          <div class="recovery-quote-text">
+            "别再说你在受苦。<br><br>
+            你的胰岛素处于极低值，正在吞噬内脏脂肪。<br><br>
+            你的多巴胺受体正在修复生物驱动力。<br><br>
+            你不是空虚，你是一台正在自我清洁的机器。"
+          </div>
+        </div>
+      </div>
+      
       <div class="page" id="page-progress">
         <div class="section-title">📈 进阶时间轴 <button class="btn btn-small btn-secondary" onclick="showProgressModal()">设置</button></div>
         
@@ -298,6 +429,7 @@
       <div class="nav-item" data-page="evening"><span class="icon">🌙</span>晚间</div>
       <div class="nav-item" data-page="records"><span class="icon">📋</span>记录</div>
       <div class="nav-item" data-page="selfcheck"><span class="icon">🧠</span>自检</div>
+      <div class="nav-item" data-page="recovery"><span class="icon">🧬</span>恢复</div>
       <div class="nav-item" data-page="progress"><span class="icon">📈</span>进度</div>
     </nav>
   </div>
@@ -649,6 +781,7 @@
       renderStats();
       renderRecords();
       renderSelfcheck();
+      initRecoveryChecklist();
       renderCurrentProgress();
       restoreCheckStates();
       
@@ -1316,6 +1449,53 @@
       if (period !== 'macro') {
         renderSelfcheck();
       }
+    }
+
+    function toggleRecoveryDrawer(drawerId) {
+      const drawer = document.getElementById(drawerId);
+      if (drawer) {
+        drawer.classList.toggle('active');
+      }
+    }
+
+    function switchRecoveryTab(tab, btn) {
+      document.querySelectorAll('.recovery-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      if (tab === 'safe') {
+        document.getElementById('safeZoneList').style.display = 'block';
+        document.getElementById('dangerZoneList').style.display = 'none';
+      } else {
+        document.getElementById('safeZoneList').style.display = 'none';
+        document.getElementById('dangerZoneList').style.display = 'block';
+      }
+    }
+
+    function toggleRecoveryCheck(index) {
+      const checklist = document.getElementById('eveningChecklist');
+      if (!checklist) return;
+      
+      const items = checklist.querySelectorAll('.recovery-check-item');
+      if (items[index]) {
+        items[index].classList.toggle('checked');
+        
+        if (!state.recovery) state.recovery = {};
+        if (!state.recovery.eveningChecklist) state.recovery.eveningChecklist = [false, false, false];
+        state.recovery.eveningChecklist[index] = items[index].classList.contains('checked');
+        saveState();
+      }
+    }
+
+    function initRecoveryChecklist() {
+      const checklist = document.getElementById('eveningChecklist');
+      if (!checklist || !state.recovery || !state.recovery.eveningChecklist) return;
+      
+      const items = checklist.querySelectorAll('.recovery-check-item');
+      state.recovery.eveningChecklist.forEach((checked, idx) => {
+        if (items[idx] && checked) {
+          items[idx].classList.add('checked');
+        }
+      });
     }
 
     function renderRecords() {
